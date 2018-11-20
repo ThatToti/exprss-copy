@@ -2,7 +2,11 @@
 const express = require('../')
 const app = express()
 
-app.get()
+app.get('/', (req, res) => {
+    console.log('request')
+})
 
-app.listen()
+app.listen(3000, () => {
+    console.log('listening')
+})
 
