@@ -3,7 +3,11 @@ const express = require('../')
 const app = express()
 
 app.get('/', (req, res) => {
-    console.log('request')
+    res.writeHead(200, {
+        'Content-Type': 'text/plain'
+    })
+
+    res.end('404')
 })
 
 app.listen(3000, () => {
