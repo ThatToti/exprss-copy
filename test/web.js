@@ -40,9 +40,8 @@ var parseCookie = function (cookie) {
 var handles = {
     index: {
         index: function (req, res) {
-            var pathname = url.parse(req.url).pathname;
             /** 读取静态文件 */
-            fs.readFile(path.resolve(__dirname, `../doc/${pathname}.html`), (err, file) => {
+            fs.readFile(path.resolve(__dirname, `../doc/index.html`), (err, file) => {
                 if (err) {
                     res.writeHead(404, {
                         'Content-Type': 'text/plain'
