@@ -35,6 +35,23 @@ var parseCookie = function (cookie) {
     return cookies
 }
 
+/** session模块 */
+var sessions = {}
+var EXPIRES = 5000
+
+var generate = () => {
+    var session = {}
+
+    session.id = (new Date()).getTime() + Math.random()
+    session.cookie = {
+        expire: (new Date()).getTime() + EXPIRES
+    }
+    sessions[session.id] = session
+
+    console.log('session 是:', session)
+
+    return session
+}
 
 /** control 模块 */
 var handles = {
@@ -66,6 +83,20 @@ var handles = {
                 res.end('welcome back')
             }
 
+        },
+        session: (req, res) => {
+            if (!req.session) {
+                var cookies = res.getHeader('Set-Cookie')
+                var session = serialize('Set-Cookie', req.session.id)
+                cookies = Array.isArray(cookies) ? cookies.concat(session) : [cookies, session]
+                res.setHeader('Set-Cookie', cookies)
+                res.session.isVisit = true
+                res.writeHead(200)
+                res.end('welcome first time!')
+            } else {
+                res.writeHead(200)
+                res.end('welcome back')
+            }
         }
     }
 }
@@ -92,6 +123,26 @@ var server = http.createServer((req, res) => {
     console.log('查询字符串:', query)
 
     req.cookies = parseCookie(req.headers.cookie)
+
+    /** session */
+    var session_id = req.cookies['session_id']
+
+    if (!session_id) {
+        req.session = generate()
+    } else {
+        var session = sessions['session_id']
+        if (session) {
+            if (session.cookie.expire > (new Date()).getTime()) {
+                session.cookie.expire = (new Date()).getTime() + EXPIRES
+                req.session = session
+            } else {
+                delete sessions['session_id']
+                req.session = generate()
+            }
+        } else {
+            req.session = generate()
+        }
+    }
 
     /** 路由控制器 */
     if (handles[controller] && handles[controller][action]) {
