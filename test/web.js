@@ -37,7 +37,7 @@ var parseCookie = function (cookie) {
 
 /** session模块 */
 var sessions = {}
-var EXPIRES = 5000
+var EXPIRES = 2 * 60 * 1000
 
 var generate = () => {
     var session = {}
@@ -85,15 +85,24 @@ var handles = {
 
         },
         session: (req, res) => {
-            if (!req.session) {
+
+            var writeHead = res.writeHead
+
+            res.writeHead = function () {
                 var cookies = res.getHeader('Set-Cookie')
-                var session = serialize('Set-Cookie', req.session.id)
+                var session = serialize('session_id', req.session.id)
                 cookies = Array.isArray(cookies) ? cookies.concat(session) : [cookies, session]
                 res.setHeader('Set-Cookie', cookies)
+                return writeHead.apply(this, arguments)
+            }
+
+            if (!req.session.isVisit) {
+                res.session = req.session
                 res.session.isVisit = true
                 res.writeHead(200)
                 res.end('welcome first time!')
             } else {
+                console.log(`看看真假:${!req.session.isVisit}`)
                 res.writeHead(200)
                 res.end('welcome back')
             }
@@ -130,7 +139,7 @@ var server = http.createServer((req, res) => {
     if (!session_id) {
         req.session = generate()
     } else {
-        var session = sessions['session_id']
+        var session = sessions[session_id]
         if (session) {
             if (session.cookie.expire > (new Date()).getTime()) {
                 session.cookie.expire = (new Date()).getTime() + EXPIRES
