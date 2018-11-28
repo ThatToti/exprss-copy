@@ -5,6 +5,7 @@ const { URLSearchParams } = require('url')
 var fs = require('fs')
 var path = require('path')
 var querystring = require('querystring')
+var crypto = require('crypto')
 
 /** cookie 构造器 */
 var serialize = (name, val, opt = {}) => {
@@ -67,6 +68,23 @@ var redirect = function (req, res, url) {
     res.end()
 }
 
+/** 加密 */
+var sign = function (val, secret) {
+    var key = crypto
+        .createHmac('sha256', secret)
+        .update(`${val}`)
+        .digest('base64')
+        .replace(/\=+$/, '')
+
+    return `${val}.${key}`
+}
+
+/** 解密 */
+var unsign = function (val, secret) {
+    var str = val.slice(0, val.lastIndexOf('.'))
+    return sign(str, secret) == val ? str : false
+}
+
 /** control 模块 */
 var handles = {
     index: {
@@ -104,7 +122,7 @@ var handles = {
 
             res.writeHead = function () {
                 var cookies = res.getHeader('Set-Cookie')
-                var session = serialize('session_id', req.session.id)
+                var session = serialize('session_id', sign(req.session.id, 'secret'))
                 cookies = Array.isArray(cookies) ? cookies.concat(session) : [cookies, session]
                 res.setHeader('Set-Cookie', cookies)
                 return writeHead.apply(this, arguments)
@@ -156,6 +174,9 @@ var server = http.createServer((req, res) => {
     if (!session_id) {
         req.session = generate()
     } else {
+        /** 解码 */
+        session_id = unsign(session_id, 'secret')
+
         var session = sessions[session_id]
         if (session) {
             if (session.cookie.expire > (new Date()).getTime()) {
