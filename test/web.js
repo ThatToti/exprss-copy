@@ -1,6 +1,7 @@
 
 var http = require('http')
 var url = require('url')
+const { URLSearchParams } = require('url')
 var fs = require('fs')
 var path = require('path')
 var querystring = require('querystring')
@@ -51,6 +52,19 @@ var generate = () => {
     console.log('session 是:', session)
 
     return session
+}
+
+var getUrl = function (_url, key, value) {
+    var obj = url.parse(_url, true)
+    // obj.query[key] = value
+    obj.search += `&${key}=${value}`
+    return url.format(obj)
+}
+
+var redirect = function (req, res, url) {
+    res.setHeader('Location', url)
+    res.writeHead(302)
+    res.end()
 }
 
 /** control 模块 */
@@ -129,11 +143,14 @@ var server = http.createServer((req, res) => {
 
     /** true 传入querystring 的 parse 方法,解析成对象;否则,是没解析和解码的字符串 */
     var query = url.parse(req.url, true).query
+    req.query = query
     console.log('查询字符串:', query)
 
     req.cookies = parseCookie(req.headers.cookie)
 
-    /** session */
+    console.log('查询 url', querystring.parse(req.url))
+
+    /** session_with_cookie */
     var session_id = req.cookies['session_id']
 
     if (!session_id) {
@@ -152,6 +169,33 @@ var server = http.createServer((req, res) => {
             req.session = generate()
         }
     }
+
+    // var id = req.query['session_id']
+
+    // if (!id) {
+    //     var session = generate()
+    //     console.log(getUrl(req.url, 'session_id', session.id))
+    //     redirect(req, res, getUrl(req.url, 'session_id', session.id))
+    // } else {
+    //     var session = sessions[id]
+
+    //     if (session) {
+    //         if (session.cookie.expire > (new Date()).getTime()) {
+    //             session.cookie.expire = (new Date()).getTime() + EXPIRES
+    //             req.session = session
+    //         } else {
+    //             delete sessions[id]
+    //             var session = generate()
+    //             redirect(req, res, getUrl(req.url, 'session_id', session.id))
+    //             return
+    //         }
+    //     } else {
+    //         var session = generate()
+    //         redirect(req, res, getUrl(req.url, 'session_id', session.id))
+    //         return;
+    //     }
+    // }
+
 
     /** 路由控制器 */
     if (handles[controller] && handles[controller][action]) {
