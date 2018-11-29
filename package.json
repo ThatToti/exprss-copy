@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "debug": "nodemon --inspect ./test/upload.js"
+    "debug": "nodemon --inspect ./test/view.js"
   },
   "devDependencies": {
     "@vue/cli-plugin-babel": "^3.2.0",
