@@ -8,7 +8,7 @@ var server = http.createServer((req, res) => {
 
     let filepath = path.resolve(__dirname, '../doc/index.css')
 
-    /** 下载附件方法 */
+    /** download file */
     res.sendFile = (filepath) => {
         fs.stat(filepath, (err, stat) => {
 
@@ -40,6 +40,11 @@ var server = http.createServer((req, res) => {
             'Location': url
         })
         res.end('redirect to new address')
+    }
+
+    /** render html */
+    res.render = (view, data) => {
+
     }
 
     res.writeHead(200)
