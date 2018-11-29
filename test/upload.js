@@ -3,6 +3,7 @@ var http = require('http')
 var fs = require('fs')
 var crypto = require('crypto')
 var querystring = require('querystring')
+var formidable = require('formidable')
 
 /** 生成随机数 */
 var generateRandom = function (len) {
@@ -18,7 +19,8 @@ var hasBody = function (req) {
 
 var handle = function (req, res) {
 
-	let type = req.headers['content-type'].split(';')[0]
+	let type = req.headers['content-type'] || ''
+	type = type.split(';')[0]
 
 	/** form */
 	if (type === 'application/x-www-form-urlencoded') {
@@ -31,6 +33,21 @@ var handle = function (req, res) {
 		/** xml */
 	} else if (type === 'application/xml') {
 		//xml 中间件去解析
+
+		/** 带 file 的表单 */
+	} else if (type === 'multipart/form-data') {
+
+		var form = new formidable.IncomingForm()
+		form.parse(req, (err, fields, files) => {
+
+			req.body = fields
+			req.files = files
+
+			res.writeHead(200, "OK")
+			res.end('multi form submit')
+		})
+
+		return
 	}
 
 	res.writeHead(200, "OK")
@@ -38,6 +55,15 @@ var handle = function (req, res) {
 }
 
 var server = http.createServer((req, res) => {
+
+	var len = req.headers['content-length'] ? parseInt(req.headers['content-length'], 10) : null
+
+	/** 413 包体过大,内存限制 */
+	if (len && len > 10) {
+		res.writeHead(413, 'too big')
+		res.end('too big');
+		return;
+	}
 
 	if (hasBody(req)) {
 		var buffers = []
