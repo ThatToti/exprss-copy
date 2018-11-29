@@ -18,7 +18,7 @@ var server = http.createServer((req, res) => {
     //     var lastModified = stat.mtime.toUTCString()
 
     //     if (lastModified == req.headers['if-modified-since']) {
-    //         res.writeHead(304)
+    //         res.writeHead(304, 'Not Modified')
     //         res.end()
     //     } else {
     //         fs.readFile(filename, (err, file) => {
@@ -47,8 +47,8 @@ var server = http.createServer((req, res) => {
 
     /** cache-control */
     fs.readFile(filename, (err, file) => {
-        res.setHeader('Cache-Control', `max-age=${10 * 365 * 1000};public`)
-        res.writeHead(200)
+        res.setHeader("Cache-Control", "max-age=1000000,private")
+        res.writeHead(200, "OK")
         res.end(file)
     })
 
