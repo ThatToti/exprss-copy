@@ -1,13 +1,26 @@
-// var http = require('http')
-// http.createServer((req, res) => {
-//     res.writeHead(200)
-//     res.end('hello world')
-// }).listen(Math.round((1 + Math.random()) * 1000), '127.0.0.1')
+var http = require('http')
 
-process.on('message', (m, server) => {
-    if (m === 'server') {
-        server.on('connection', (socket) => {
-            socket.end(`handled by child, pid is ${process.pid}\n`)
+var server = http.createServer((req, res) => {
+    res.writeHead(200)
+    res.end(`handled by child, pid is ${process.pid}\n`)
+})
+
+var worker
+
+process.on('message', (msg, tcp) => {
+
+    worker = tcp
+
+    if (msg === 'server') {
+        tcp.on('connection', (socket) => {
+            socket.end(`handled by worker ${process.pid}`)
+            throw new Error('throw err')
         })
     }
+})
+
+process.on(`uncaughtException`, (err) => {
+    process.send({ act: 'suicide' })
+
+    worker.close(() => process.exit(1))
 })
